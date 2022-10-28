@@ -1,0 +1,78 @@
+<!-- Complete project details: https://randomnerdtutorials.com/esp8266-nodemcu-plot-readings-charts-multiple/ -->
+
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>ESP32 IOT DASHBOARD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script> 
+    <!--<script src="highcharts.js"></script>-->
+  </head>
+
+  <body>
+    <div class="topnav">
+      <h1>Nutikas energiamootur</h1>
+    </div>
+    <div class="content">
+      <div class="card-grid">
+        <div class="card">
+          <p class="card-title">Data from device</p>
+          <!--<p id="measMode"> No data about measurment mode, by default AC mode </p>
+          <button id="ACmode" onclick="changeToAC()">AC mode</button>
+          <button id="DCmode" onclick="changeToDC()">DC mode</button>-->
+          <p id = "uptime"> Device uptime: </p>
+            <div>
+              <div class='child float-left-child' id="dataTableDiv">
+                <table id="dataTable" border="1">
+                  <thead>
+                    <th>Parameeter</th>
+                    <th>Vaartus</th>
+                  </thead>
+                  <tbody id="insertdataTable">
+                  </tbody>
+                </table>
+              </div>
+              <div class='child float-left-child'>
+                <input type="button" name="button" value="Run Calibration" onclick="sendCalibRequest()">
+                %BUTTONPLACEHOLDER%
+              </div>
+            </div>
+            <p ></p>
+        </div>
+        <div class="card">
+          <p class="card-title">Voltage/Current Chart</p>
+          <div id="chart-VW" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <p class="card-title">Voltage FFT Chart</p>
+          <div id="chart-VFFT" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <p class="card-title">Current FFT Chart</p>
+          <div id="chart-IFFT" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <p class="card-title">Trigger Chart, currently only for current</p>
+          <form name="myform" action="" method="get">
+            Enter nr of measured points, trigger level and timeout in textboxes: <br>
+            <input type="number" name="inputbox1" value="150" id="nr">
+            <input type="number" name="inputbox2" value="0.25" id="tlevel">
+            <input type="number" name="inputbox3" value="10000" id="timeout">
+            <input type="radio" name="choice" value="1" id="radvoltage"> 
+            <label for="radvoltage">Trigger on voltage</label>
+            <input type="radio" name="choice" value="0" id="radcurrent">
+            <label for="radcurrent">Trigger on current</label>
+            <input type="button" name="button" value="Trigger" onclick="sendTriggerRequest()">
+          </form>
+          <div id="chart-Trigger" class="chart-container"></div>
+        </div>
+
+      </div>
+
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,101 @@
+/* Complete project details: https://randomnerdtutorials.com/esp8266-nodemcu-plot-readings-charts-multiple/ */
+
+html {
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-block;
+  text-align: center;
+}
+h1 {
+  font-size: 1.8rem;
+  color: white;
+}
+
+h4 {
+  margin-block-end: 1rem
+}
+
+p {
+  font-size: 1rem;
+}
+.topnav {
+  overflow: hidden;
+  background-color: #0A1128;
+}
+body {
+  margin: 0;
+}
+.content {
+  padding: 5%;
+}
+.card-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-gap: 2rem;
+  grid-template-rows: repeat(auto-fit, minmax(200px, 1fr));
+}
+.card {
+  background-color: white;
+  box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5);
+}
+.card-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #034078
+}
+.chart-container {
+  padding-right: 5%;
+  padding-left: 5%;
+}
+
+#measMode {
+  font-size: 0.8rem;
+}
+
+table {
+  border-spacing: 1px;
+  width: 500px;
+  margin-left: auto;
+  margin-right: auto;  
+}
+
+th {
+  padding: 1px;
+}
+
+#dataTableDiv {
+  width: 100%;
+  
+}
+
+#dataTable {
+  color: black;
+  background-color: white;
+  float: left;
+  margin-left: 100px
+}
+
+#insertdataTable {
+  background-color: white;
+}
+
+.switch {position: relative;display: inline-block;width: 120px;height: 32px;} 
+
+.switch input {display: none;}
+
+.slider {position: absolute;top: 0;left: 0;right: 0;bottom: 0;background-color: #ccc;border-radius: 6px;}
+
+.slider:before {position: absolute;content: "";height: 16px;width: 52px;left: 8px;bottom: 8px;background-color: #fff;-webkit-transition: .4s;transition: .4s;border-radius: 3px;}
+
+input:checked+.slider {background-color: #b30000}
+
+input:checked+.slider:before {-webkit-transform: translateX(52px); -ms-transform: translateX(52px); transform: translateX(52px)}
+
+
+.slider2 {position: absolute;top: 0;left: 0;right: 0;bottom: 0;background-color: #0b1ed1;border-radius: 6px;}
+
+.slider2:before {position: absolute;content: "";height: 16px;width: 52px;left: 8px;bottom: 8px;background-color: #fff;-webkit-transition: .4s;transition: .4s;border-radius: 3px;}
+
+input:checked+.slider2 {background-color: #b30000}
+
+input:checked+.slider2:before {-webkit-transform: translateX(52px); -ms-transform: translateX(52px); transform: translateX(52px)}
