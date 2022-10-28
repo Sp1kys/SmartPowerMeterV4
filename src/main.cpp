@@ -5,8 +5,6 @@
   #include <HTTPClient.h>
   #include <FS.h>
   #include <PubSubClient.h>
-  //#include "esp32/rom/rtc.h"
-  //#include "rom/rtc.h"
   #include <Wire.h>
   #include <Adafruit_GFX.h>
   #include <Adafruit_SSD1306.h>
@@ -51,14 +49,8 @@ AsyncEventSource events("/events");
 
 WiFiClient wifiClient;
 
-/*PubSubClient client(wifiClient);
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE	(50)
-char msg[MSG_BUFFER_SIZE];
-int value = 0;
-*/
-
-String apiKey = "cc9a44ab7f1a994adfc7a7a21f29529d";
+//String apiKey = "cc9a44ab7f1a994adfc7a7a21f29529d";
+String apiKey = "1acc2f443e9c0c49a8211d33e14ac873";
 
 /* Basic initializations */
 #define SPI_SPEED 10000000     //SPI Speed
@@ -181,11 +173,10 @@ void setup() {
   delay(100);
   xTaskCreate(sendDataToDBTask,"Send2DB",8192,NULL,1,&Task7);
   delay(100);
-  xTaskCreate(OTATask,"OTA",4096,NULL,0,&Task8);
+  xTaskCreate(OTATask,"OTA",4096,NULL,1,&Task8);
   delay(100);
   xTaskCreate(displayUpdateTask,"OLED",4096,NULL,1,&Task9);
   
-  //xTaskCreatePinnedToCore(codeForTask2,"Test",30000,NULL,2,NULL,1);
 }
   
 void loop() {
@@ -195,7 +186,7 @@ void loop() {
 void readandwrite()
 { 
  /* Read and Print WATT Register using ADE9153A Read Library */
-  ade9153A.ReadPowerRegs(&powerVals);    //Template to read Power registers from ADE9000 and store data in Arduino MCU
+  ade9153A.ReadPowerRegs(&powerVals); 
   ade9153A.ReadRMSRegs(&rmsVals);
   ade9153A.ReadPQRegs(&pqVals);
   ade9153A.ReadTemperature(&tempVal);
@@ -209,7 +200,9 @@ void readandwrite()
     reactiveEnergy = reactiveEnergy + energyVals.FundReactiveEnergyValue/1000;
     apparentEnergy = apparentEnergy + energyVals.ApparentEnergyValue/1000;
 
-    String serverName1 = "http://192.168.50.154:8080/input/post?node=esp8266v3&fulljson=";
+    //String serverName1 = "http://192.168.50.154:8080/input/post?node=esp32v4&fulljson=";
+    //String serverName1 = "http://192.168.58.204:8888/input/post";
+    String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";//change this!!!
     String Json = "";
 
     if (measMode == 0)
@@ -232,14 +225,19 @@ void readandwrite()
     }
     
     events.send(Json.c_str(),"new_data" ,millis());
-    serverName1 = serverName1 + Json + "&apikey=" + apiKey;
+    //serverName1 = serverName1 + Json + "&apikey=" + apiKey; 
+    //serverName1 = serverName1 + Json + "&apikey=" + apiKey; 
+    
 
-    //HTTPClient http;
-    //http.begin(wifiClient, serverName1);
+    HTTPClient http;
+    http.begin(wifiClient, serverName1);
     //Serial.println(serverName1);
+    http.addHeader("Content-Type", "application/json");
+    int httpResponseCode = http.POST(Json);//"node=1&data="+ Json +"&apikey=1acc2f443e9c0c49a8211d33e14ac873"
+
     //int httpResponseCode = http.GET();
-    //Serial.print("HTTP Response code: ");
-    //Serial.println(httpResponseCode);
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
     wifiWTD = 0;
 
   }
@@ -273,10 +271,6 @@ void resetADE9153A(void)
   ade9153A.SetupADE9153A(); //Setup ADE9153A according to ADE9153AAPI.h
   /* Read and Print Specific Register using ADE9153A SPI Library */
   Serial.println(String(ade9153A.SPI_Read_32(REG_VERSION_PRODUCT), HEX)); // Version of IC
-  long Igain = (-(1)-1) * 134217728;//622.4 for v3, 740.7 for v4 (-(1.01959)-1) *
-  long Vgain = (1-1) * 134217728;//13283 for v3, 13289 for v4 (0.979895-1)0.98175 *
-  ade9153A.SPI_Write_32(REG_AIGAIN, Igain); //AIGAIN to -1 to account for IAP-IAN swap
-  ade9153A.SPI_Write_32(REG_AVGAIN, Vgain);
 
 }
 
@@ -300,7 +294,7 @@ void runLength(unsigned long seconds)
   HTTPClient http;
     
     // Your Domain name with URL path or IP address with path
-    String serverName1 = "http://192.168.50.154:8080/input/post?node=esp8266v3&fulljson={\"AICC\":"+ String(acalVals.AICC) + ",\"AICERT\":"+ String(acalVals.AcalAICERTReg) + 
+    String serverName1 = "http://192.168.50.154:8080/input/post?node=esp32v4&fulljson={\"AICC\":"+ String(acalVals.AICC) + ",\"AICERT\":"+ String(acalVals.AcalAICERTReg) + 
                           ",\"AVCC\":"+ String(acalVals.AVCC) + ",\"AVCERT\":"+ String(acalVals.AcalAVCERTReg) + "}&apikey=" + apiKey;
 
     http.begin(wifiClient, serverName1);
@@ -503,10 +497,10 @@ void calibrate()
     Serial.println(acalVals.AVCC);
     Serial.print("AVCERT: ");
     Serial.println(acalVals.AcalAVCERTReg);
-    //long Igain = 0 * 134217728;//-134217728, -134217728
-    //long Vgain = 0 * 134217728;//-2568020, -5777830
-    //ade9153A.SPI_Write_32(REG_AIGAIN, Igain);
-    //ade9153A.SPI_Write_32(REG_AVGAIN, Vgain);
+    long Igain = (-acalVals.AICC-740.7) * 134217728; //622.4 for v3, 740.7 for v4
+    long Vgain = (acalVals.AVCC-13289) * 134217728; //13283 for v3, 13289 for v4
+    ade9153A.SPI_Write_32(REG_AIGAIN, Igain);
+    ade9153A.SPI_Write_32(REG_AVGAIN, Vgain);
     
     Serial.println("Autocalibration Complete");
     delay(2000);
@@ -643,10 +637,6 @@ double doFFT(int cycles, int select)
   FFTV = FFTV + "}";
 
   fft_destroy(real_fft_plan);
-
-  //FFTI = FFTI + "}";
-  //Serial.println(FFTV);
-  //Serial.println(FFTI);
   
   if (select == 0)
   {
@@ -835,7 +825,6 @@ int trigger(int cycles, float triggerLevel, unsigned long timeout, int select)
   
   for(int i=cycles/2+1; i < cycles; i++)
   {
-      //arrayV[i] = int32_t (SPI_Read_32(REG_AV_WAV));
       triggerBuffer[i] = int32_t (SPI_Read_32(REG_AI_WAV));
       triggerBuffer2[i] = int32_t (SPI_Read_32(REG_AV_WAV));
       while(micros() - microseconds < sampling_period_us)
@@ -856,7 +845,7 @@ int trigger(int cycles, float triggerLevel, unsigned long timeout, int select)
   {
     triggerData = triggerData + "\"" + String(i) + "\":" + String(triggerBuffer[i]);
     triggerData2 = triggerData2 + "\"" + String(i) + "\":" + String(triggerBuffer2[i]);
-    if (i < (cycles)- 1)//-1 is original solution
+    if (i < (cycles)- 1)
     {
       triggerData = triggerData + ",";
       triggerData2 = triggerData2 + ",";
@@ -1006,7 +995,7 @@ void sendDataToDBTask( void * parameter )
 {
   for (;;) 
   {
-    if (wifiWTD > 5) ESP.restart();//Wi-Fi watchdog, usually triggers after about 12 days of uptime
+    if (wifiWTD > 5) ESP.restart();//Wi-Fi watchdog,
     wifiWTD++;
     readandwrite();//Uploading data to external server
     vTaskDelay(5000 / portTICK_PERIOD_MS);
@@ -1018,7 +1007,7 @@ void OTATask( void * parameter )
   for (;;) 
   {
     ArduinoOTA.handle();//OTA update task
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 
@@ -1204,70 +1193,3 @@ void updateDisplay()
   delay(5);
   display.display();
 }
-
-
-
-/*MQTT
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-
-  // Switch on the LED if an 1 was received as first character
-  if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
-    // but actually the LED is on; this is because
-    // it is active low on the ESP-01)
-  } else {
-    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
-  }
-
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Create a random client ID
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
-    // Attempt to connect
-    if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
-      // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
-      // ... and resubscribe
-      client.subscribe("inTopic");
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
-    }
-  }
-}*/
-
-/*
-void codeForTask2( void * parameter ) 
-{
-  for (;;) 
-  {
-    THDV = doFFT(kordus2, 0);
-
-    vTaskDelay(15000 / portTICK_PERIOD_MS);
-  }
-}
-
-void codeForTask3( void * parameter ) 
-{
-  for (;;) 
-  {
-    THDI = doFFT(kordus2, 1);
-    vTaskDelay(15000 / portTICK_PERIOD_MS);
-  }
-}*/
