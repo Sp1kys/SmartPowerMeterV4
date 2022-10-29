@@ -202,17 +202,22 @@ void readandwrite()
 
     //String serverName1 = "http://192.168.50.154:8080/input/post?node=esp32v4&fulljson=";
     //String serverName1 = "http://192.168.58.204:8888/input/post";
-    String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";//change this!!!
+    String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";
     String Json = "";
 
     if (measMode == 0)
     {
+      /*
       Json = "{\"Voltage\":"+ String(rmsVals.VoltageRMSValue/1000,3) + ",\"Current\":"+ String(rmsVals.CurrentRMSValue/1000,3) + 
               ",\"Power\":"+ String(powerVals.ActivePowerValue/1000) + ",\"Apparent_Power\":"+ String(powerVals.ApparentPowerValue/1000) + 
               ",\"Temp\":"+ String(tempVal.TemperatureVal) + ",\"Frequency\":"+ String(pqVals.FrequencyValue,3) + ",\"PF\":"+ String(pqVals.PowerFactorValue) + 
               ",\"Phase_shift\":"+ String(pqVals.AngleValue_AV_AI) + ",\"Active_energy\":"+ String(realEnergy) + ",\"Reactive_energy\":"+ String(reactiveEnergy) + 
               ",\"Apparent_energy\":"+ String(apparentEnergy)+ ",\"HalfRMS_current\":"+ String(halfrmsVals.HalfCurrentRMSValue/1000) + ",\"THD_voltage\":"+ String(THDV) + 
-              ",\"THD_current\":"+ String(THDI) + ",\"Memory_free\":"+ String(ESP.getFreeHeap()) + "}"; 
+              ",\"THD_current\":"+ String(THDI) + ",\"Memory_free\":"+ String(ESP.getFreeHeap()) + "}"; */
+      Json =  "{\"Voltage\":"+ String(rmsVals.VoltageRMSValue/1000,3) + 
+              ",\"Current\":"+ String(rmsVals.CurrentRMSValue/1000,3) + 
+              ",\"Power\":"+ String(powerVals.ActivePowerValue/1000) + 
+              ",\"PF\":"+ String(pqVals.PowerFactorValue) + "}"; 
     }
     else if (measMode == 1)
     {
@@ -239,7 +244,7 @@ void readandwrite()
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
     wifiWTD = 0;
-
+    http.end();
   }
   else {
     Serial.println("WiFi Disconnected");
