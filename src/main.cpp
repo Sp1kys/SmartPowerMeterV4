@@ -201,8 +201,8 @@ void readandwrite()
     apparentEnergy = apparentEnergy + energyVals.ApparentEnergyValue/1000;
 
     //String serverName1 = "http://192.168.50.154:8080/input/post?node=esp32v4&fulljson=";
-    //String serverName1 = "http://192.168.58.204:8888/input/post";
-    String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";
+    String serverName1 = "http://192.168.32.107:8080/api/socket"; ///api/socket
+    //String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";
     String Json = "";
 
     if (measMode == 0)
@@ -236,7 +236,7 @@ void readandwrite()
 
     HTTPClient http;
     http.begin(wifiClient, serverName1);
-    //Serial.println(serverName1);
+    Serial.println(serverName1);
     http.addHeader("Content-Type", "application/json");
     int httpResponseCode = http.POST(Json);//"node=1&data="+ Json +"&apikey=1acc2f443e9c0c49a8211d33e14ac873"
 
