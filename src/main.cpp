@@ -8,6 +8,7 @@
   #include <Wire.h>
   #include <Adafruit_GFX.h>
   #include <Adafruit_SSD1306.h>
+  #include <espmdns.h>
 #endif
 
 #ifdef ESP8266
@@ -36,6 +37,9 @@
 
 #define DEBUG_DUT false
 
+//#define OLD_BOARD
+#define NEW_BOARD
+
 #define MAX_LENGTH_TELNET_PW 50
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -58,8 +62,21 @@ String apiKey = "1acc2f443e9c0c49a8211d33e14ac873";
 /*Esp32 pins CS 5, Mosi 23, Miso 19, Sclk 18; ESP32c3 CS 7, Mosi 6, Miso 5, Sclk 4*/
 
 #ifdef ESP32
-  #define CS_PIN 5            //5-esp32 devkit, 7-esp32c3 devkit mini 
-  #define ADE9153A_RESET_PIN 17 //19-esp32 devkit, 5-esp32c3 devkit mini 
+
+  #define CS_PIN 5            //5-esp32 devkit, 7-esp32c3 devkit mini, 
+  
+  #ifdef OLD_BOARD
+  
+    #define ADE9153A_RESET_PIN 19 //19-esp32 devkit, 5-esp32c3 devkit mini, 17 for v4 board}
+
+  #endif
+
+  #ifdef NEW_BOARD
+
+    #define ADE9153A_RESET_PIN 17 //19-esp32 devkit, 5-esp32c3 devkit mini, 17 for v4 board
+
+  #endif
+  
 #endif
 
 #ifdef ESP8266
@@ -136,6 +153,20 @@ int waveState = 0;
 int relayState = 1;
 int wifiWTD = 0;
 
+#ifdef OLD_BOARD
+  
+    String DevID = "\"RocketSocket3\""; //Seadme nimi  
+
+  #endif
+
+  #ifdef NEW_BOARD
+
+    String DevID = "\"RocketSocket1\""; //Seadme nimi  
+
+  #endif
+
+
+
 
 TaskHandle_t Task1, Task2, Task3, Task4, Task5, Task6, Task7, Task8, Task9;
 
@@ -201,7 +232,7 @@ void readandwrite()
     apparentEnergy = apparentEnergy + energyVals.ApparentEnergyValue/1000;
 
     //String serverName1 = "http://192.168.50.154:8080/input/post?node=esp32v4&fulljson=";
-    String serverName1 = "http://192.168.32.107:8080/api/socket";
+    String serverName1 = "http://rocket-socket.herokuapp.com/api/socket";
     //String serverName1 = "http://ptsv2.com/t/yx1ay-1666997073/post";
     String Json = "";
 
@@ -217,7 +248,8 @@ void readandwrite()
       Json =  "{\"Voltage\":"+ String(rmsVals.VoltageRMSValue/1000,3) + 
               ",\"Current\":"+ String(rmsVals.CurrentRMSValue/1000,3) + 
               ",\"Power\":"+ String(powerVals.ActivePowerValue/1000) + 
-              ",\"PF\":"+ String(pqVals.PowerFactorValue) + "}"; 
+              ",\"PF\":"+ String(pqVals.PowerFactorValue) + 
+              ",\"DevID\":" + DevID + "}"; 
     }
     else if (measMode == 1)
     {
@@ -243,12 +275,13 @@ void readandwrite()
     //int httpResponseCode = http.GET();
     Serial.print("HTTP Response code: ");
     Serial.println(httpResponseCode);
-    wifiWTD = 0;
+    if (httpResponseCode == 200) wifiWTD = 0;
     http.end();
+
   }
   else {
     Serial.println("WiFi Disconnected");
-    if (wifiWTD > 5) ESP.restart();//Wi-Fi watchdog
+    //if (wifiWTD > 60) ESP.restart();//Wi-Fi watchdog
   }  
 }
 
@@ -259,6 +292,8 @@ void resetADE9153A(void)
  digitalWrite(ADE9153A_RESET_PIN, HIGH);
  delay(1000);
  Serial.println("Reset Done");
+
+ long Igain = -2*134217728;
 
   delay(1000);
 
@@ -276,6 +311,7 @@ void resetADE9153A(void)
   ade9153A.SetupADE9153A(); //Setup ADE9153A according to ADE9153AAPI.h
   /* Read and Print Specific Register using ADE9153A SPI Library */
   Serial.println(String(ade9153A.SPI_Read_32(REG_VERSION_PRODUCT), HEX)); // Version of IC
+  ade9153A.SPI_Write_32(REG_AIGAIN, Igain);
 
 }
 
@@ -675,6 +711,12 @@ void initWebServer ()
     xTaskCreate(calibTask,"Calib",2048,NULL,1,&Task2);
   });
 
+  // Request for voltage and current calibration
+  server2.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", "Reseting ESP!");
+    ESP.restart();
+  });
+
   // Send a GET request to <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
   server2.on("/update", HTTP_GET, [] (AsyncWebServerRequest *request) {
     
@@ -766,6 +808,14 @@ void initWebServer ()
 
   // Start server
   server2.begin();
+
+if(!MDNS.begin("RocketSocket1")) {
+     Serial.println("Error starting mDNS");
+     return;
+  }
+
+ MDNS.addService("http", "tcp", 80);
+
 }
 
 int trigger(int cycles, float triggerLevel, unsigned long timeout, int select)
@@ -1000,10 +1050,10 @@ void sendDataToDBTask( void * parameter )
 {
   for (;;) 
   {
-    if (wifiWTD > 5) ESP.restart();//Wi-Fi watchdog,
+    if (wifiWTD > 60) ESP.restart();//Wi-Fi watchdog,
     wifiWTD++;
     readandwrite();//Uploading data to external server
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -1197,4 +1247,6 @@ void updateDisplay()
   display.println(String(days)+ "d "+ String(hrs)+ "h "+ String(mins)+ "min "+ String(secs)+ "s");
   delay(5);
   display.display();
+
+
 }
